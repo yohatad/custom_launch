@@ -47,6 +47,9 @@ def generate_launch_description():
                 'depth_module.depth_profile': '640x480x15',
 
                 # ---------------- QoS (Wi-Fi SAFE) ----------------
+                # Publish depth point cloud (needed for lidar_depth_calibrator)
+                'pointcloud.enable': 'true',
+
                 'color_qos': 'SENSOR_DATA',
                 'color_info_qos': 'SENSOR_DATA',
 
@@ -74,26 +77,33 @@ def generate_launch_description():
         #                           established by l2lidar.launch.py)
         #  Child  : camera_camera_link  (back-center of D435i housing)
         #
-        #  Translation from L2 LiDAR bottom-center to camera back-center,
-        #  expressed in l2lidar_frame axes (Z = forward):
-        #      x =  0.00062 m  (dx = 0.62 mm lateral)
-        #      y =  0.00000 m  (dy = 0 mm)
-        #      z =  0.05084 m  (dz = 50.84 mm forward)
+        #  Translation from L2 LiDAR bottom-center to camera back-center.
+        #  CAD measurement is in base_footprint axes (X=fwd, Y=left, Z=up):
+        #      X =  0.00062 m  (0.62 mm forward)
+        #      Y =  0.00000 m  (0 mm lateral)
+        #      Z =  0.05084 m  (50.84 mm up — camera sits on top of LiDAR)
         #
-        #  Rotation: identity – replace with extrinsic calibration result.
+        #  Because l2lidar_frame is tilted ~24° off vertical, those values
+        #  are rotated into l2lidar_frame coords (R_BL^T * t_base):
+        #      --x =  0.04644 m   --y = -0.02069 m   --z = 0.00040 m
+        #
+        #  Rotation: inverse of base_footprint→l2lidar_frame rotation (from
+        #  l2lidar.launch.py), so that camera_camera_link is axis-aligned
+        #  with base_footprint (X=forward, Y=left, Z=up).
+        #  Replace translation + rotation with extrinsic calibration result.
         # ------------------------------------------------------------
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',
             name='l2lidar_to_realsense_tf',
             arguments=[
-                '--x',  '0.00062',
-                '--y',  '0.00000',
-                '--z',  '0.05084',
-                '--qx', '0',
-                '--qy', '0',
-                '--qz', '0',
-                '--qw', '1',
+                '--x',  '0.066236',   # (0.069807 + 0.062665) / 2
+                '--y', '-0.023465',   # (-0.020211 + -0.026718) / 2
+                '--z',  '-0.026186',  # (-0.025706 + -0.026665) / 2
+                '--qx', '0.680662',
+                '--qy', '-0.150057',
+                '--qz', '0.701193',
+                '--qw', '0.149946',
                 '--frame-id',       'l2lidar_frame',
                 '--child-frame-id', 'camera_camera_link',
             ]

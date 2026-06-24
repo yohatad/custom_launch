@@ -22,7 +22,9 @@ setup(
     license='Apache License 2.0',
     entry_points={
         'console_scripts': [
-            'color_compressor = custom_launch.color_compressor:main',  # Add this line
+            'color_compressor = custom_launch.color_compressor:main',
+            'lidar_colorizer = custom_launch.lidar_colorizer:main',
+            'lidar_depth_calibrator = custom_launch.lidar_depth_calibrator:main',
         ],
     },
 )
